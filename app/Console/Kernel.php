@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use DepositService;
 
 class Kernel extends ConsoleKernel
 {
@@ -24,7 +25,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Если по депозиту нужно начислить проценты и снять комиссию в один и тот же день,
+        // то сначала начислятся проценты в 00:00, затем снимется комиссия в 01:00.
+        $schedule->call(function () {
+            DepositService::interest_accrual();
+        })->daily();
+
+        $schedule->call(function () {
+            DepositService::commission_withdrawal();
+        })->monthlyOn(1, '01:00');
     }
 
     /**
